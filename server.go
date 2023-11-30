@@ -5,6 +5,7 @@ import (
 	"io"
 	"net"
 	"sync"
+	"time"
 )
 
 type Server struct {
@@ -53,6 +54,9 @@ func (this *Server) Handler(conn net.Conn) {
 	// when user online
 	user.Online()
 
+	// a channel to listen to whether current user is active
+	isActive := make(chan bool)
+
 	//accept message send from client
 	go func() {
 		buf := make([]byte, 4096)
@@ -71,11 +75,31 @@ func (this *Server) Handler(conn net.Conn) {
 			msg := string(buf[:n-1])
 
 			user.DoMessage(msg)
+
+			// user is active if it has any message
+			isActive <- true
 		}
 	}()
 
 	// block handler
-	select {}
+	for {
+		select {
+		case <-isActive:
+			// user is active, reset timer
+			// do noting, so we can use select update the timer
+		case <-time.After(time.Second * 10):
+			// timeout
+			user.SendMsg("kicked\n")
+
+			// close user's channel
+			close(user.C)
+
+			// close connection
+			conn.Close()
+
+			return
+		}
+	}
 }
 
 func (this *Server) Start() {
