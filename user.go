@@ -46,8 +46,23 @@ func (this *User) Offline() {
 	this.server.BoardCast(this, "offline")
 }
 
+// SendMsg send msg to corresponding user client
+func (this *User) SendMsg(msg string) {
+	this.conn.Write([]byte(msg))
+}
+
 func (this *User) DoMessage(msg string) {
-	this.server.BoardCast(this, msg)
+	if msg == "who" {
+		// search all online users
+		this.server.mapLock.Lock()
+		for _, user := range this.server.OnlineMap {
+			onlineMsg := "[" + user.Addr + "]" + user.Name + ":" + "is online...\n"
+			this.SendMsg(onlineMsg)
+		}
+		this.server.mapLock.Unlock()
+	} else {
+		this.server.BoardCast(this, msg)
+	}
 }
 
 // ListenMessage listen to current channel, once have message, send it to user client
