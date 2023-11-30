@@ -48,15 +48,10 @@ func (this *Server) BoardCast(user *User, msg string) {
 
 func (this *Server) Handler(conn net.Conn) {
 	//fmt.Println("connect successfully")
-	user := NewUser(conn)
+	user := NewUser(conn, this)
 
-	// when user online, add it into onlineMap
-	this.mapLock.Lock()
-	this.OnlineMap[user.Name] = user
-	this.mapLock.Unlock()
-
-	// tell other users a user is online
-	this.BoardCast(user, "online")
+	// when user online
+	user.Online()
 
 	//accept message send from client
 	go func() {
@@ -64,7 +59,7 @@ func (this *Server) Handler(conn net.Conn) {
 		for {
 			n, err := conn.Read(buf)
 			if n == 0 {
-				this.BoardCast(user, "offline")
+				user.Offline()
 				return
 			}
 			if err != nil && err != io.EOF {
@@ -75,7 +70,7 @@ func (this *Server) Handler(conn net.Conn) {
 			// extract user's message and eliminate '\n' at the end
 			msg := string(buf[:n-1])
 
-			this.BoardCast(user, msg)
+			user.DoMessage(msg)
 		}
 	}()
 
