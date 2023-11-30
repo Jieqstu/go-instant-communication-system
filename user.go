@@ -79,6 +79,27 @@ func (this *User) DoMessage(msg string) {
 			this.Name = newName
 			this.SendMsg("username is updated:" + this.Name + "\n")
 		}
+	} else if len(msg) > 4 && msg[:3] == "to|" {
+		// format: to|remoteName|content
+		remoteName := strings.Split(msg, "|")[1]
+		if remoteName == "" {
+			this.SendMsg("wrong format, please use \"to|remoteName|content\".\n")
+			return
+		}
+
+		remoteUser, ok := this.server.OnlineMap[remoteName]
+		if !ok {
+			this.SendMsg("username not found")
+			return
+		}
+
+		content := strings.Split(msg, "|")[2]
+		if content == "" {
+			this.SendMsg("empty content\n")
+			return
+		}
+
+		remoteUser.SendMsg(this.Name + " says: " + content)
 	} else {
 		this.server.BoardCast(this, msg)
 	}

@@ -87,7 +87,7 @@ func (this *Server) Handler(conn net.Conn) {
 		case <-isActive:
 			// user is active, reset timer
 			// do noting, so we can use select update the timer
-		case <-time.After(time.Second * 10):
+		case <-time.After(time.Second * 300):
 			// timeout
 			user.SendMsg("kicked\n")
 
